@@ -1,23 +1,18 @@
-# qwen-worker-todo-pages
+# Qwen Worker Todo Pages
 
-A small static to-do app intended to run from the GitHub Pages root.
+A dependency-free todo app that runs as plain static files on GitHub Pages.
 
 ## Features
 
-- Add, complete, delete, and clear completed todos
-- Saves todos in `localStorage`
-- Accessible labels and keyboard-friendly controls
-- Plain HTML, CSS, and JavaScript only
+- Add todos from the form
+- Persist todos in `localStorage` with key `qwenWorkerTodos.v1`
+- Render the todo list in the DOM
+- Toggle each todo with a checkbox
+- Delete individual todos
+- Clear completed todos
+- Show an empty state and remaining-item count
+- Accessible labels and keyboard-friendly buttons/inputs
 
-## Files
+## Run locally
 
-- `index.html` - page markup
-- `styles.css` - responsive light/dark styling
-- `app.js` - todo state, rendering, and persistence
-
-## Verification
-
-```bash
-node --check app.js
-git diff --check
-```
+Open `index.html` directly in a browser, or serve the directory with any static file server. No install, build, or dependencies are required.
