@@ -1,55 +1,110 @@
-// Initialize an empty array to store todos
-let todos = [];
+const STORAGE_KEY = "qwen-worker-todos";
 
-// Function to add a new todo item
-function addTodo(title) {
-  const todo = { id: Date.now(), title, completed: false };
-  todos.push(todo);
-  saveTodos();
-}
+const form = document.querySelector("#todo-form");
+const input = document.querySelector("#todo-input");
+const list = document.querySelector("#todo-list");
+const count = document.querySelector("#todo-count");
+const clearCompletedButton = document.querySelector("#clear-completed");
 
-// Function to toggle the completion status of a todo item
-function toggleTodo(id) {
-  const index = todos.findIndex(t => t.id === id);
-  if (index !== -1) {
-    todos[index].completed = !todos[index].completed;
-    saveTodos();
-  }
-}
+let todos = loadTodos();
 
-// Function to delete a todo item
-function deleteTodo(id) {
-  const index = todos.findIndex(t => t.id === id);
-  if (index !== -1) {
-    todos.splice(index, 1);
-    saveTodos();
-  }
-}
-
-// Function to clear all completed items
-function clearCompleted() {
-  todos = todos.filter(todo => !todo.completed);
-  saveTodos();
-}
-
-// Function to save todos to localStorage
-function saveTodos() {
-  localStorage.setItem('qwenWorkerTodos.v1', JSON.stringify(todos));
-}
-
-// Function to load todos from localStorage
 function loadTodos() {
-  const storedTodos = localStorage.getItem('qwenWorkerTodos.v1');
-  if (storedTodos) {
-    todos = JSON.parse(storedTodos);
+  try {
+    const savedTodos = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    return Array.isArray(savedTodos) ? savedTodos : [];
+  } catch {
+    return [];
   }
 }
 
-// Load todos on page load
-loadTodos();
+function saveTodos() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+}
 
-// Example usage of the app
-addTodo('Learn Git');
-toggleTodo(1);
-deleteTodo(2);
-clearCompleted();
+function createTodo(text) {
+  return {
+    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+    text,
+    complete: false,
+  };
+}
+
+function addTodo(text) {
+  const trimmedText = text.trim();
+
+  if (!trimmedText) {
+    return;
+  }
+
+  todos = [createTodo(trimmedText), ...todos];
+  saveTodos();
+  render();
+}
+
+function toggleTodo(id) {
+  todos = todos.map((todo) => (
+    todo.id === id ? { ...todo, complete: !todo.complete } : todo
+  ));
+  saveTodos();
+  render();
+}
+
+function deleteTodo(id) {
+  todos = todos.filter((todo) => todo.id !== id);
+  saveTodos();
+  render();
+}
+
+function clearCompleted() {
+  todos = todos.filter((todo) => !todo.complete);
+  saveTodos();
+  render();
+}
+
+function render() {
+  list.textContent = "";
+
+  for (const todo of todos) {
+    const item = document.createElement("li");
+    item.className = "todo-item";
+    item.classList.toggle("is-complete", todo.complete);
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = todo.complete;
+    checkbox.setAttribute("aria-label", `Mark ${todo.text} as ${todo.complete ? "incomplete" : "complete"}`);
+    checkbox.addEventListener("change", () => toggleTodo(todo.id));
+
+    const text = document.createElement("span");
+    text.className = "todo-text";
+    text.textContent = todo.text;
+
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "delete-button";
+    deleteButton.type = "button";
+    deleteButton.textContent = "Delete";
+    deleteButton.setAttribute("aria-label", `Delete ${todo.text}`);
+    deleteButton.addEventListener("click", () => deleteTodo(todo.id));
+
+    item.append(checkbox, text, deleteButton);
+    list.append(item);
+  }
+
+  const remaining = todos.filter((todo) => !todo.complete).length;
+  const completed = todos.length - remaining;
+  count.textContent = todos.length === 0
+    ? "No todos yet."
+    : `${remaining} active, ${completed} completed.`;
+  clearCompletedButton.disabled = completed === 0;
+}
+
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+  addTodo(input.value);
+  form.reset();
+  input.focus();
+});
+
+clearCompletedButton.addEventListener("click", clearCompleted);
+
+render();
